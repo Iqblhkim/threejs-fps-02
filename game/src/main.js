@@ -37,8 +37,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.getElementById('game').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x201812);
-scene.fog = new THREE.Fog(new THREE.Color(0x201812), 30, 90);
+scene.background = new THREE.Color(0x2a1d13);
+scene.fog = new THREE.Fog(new THREE.Color(0x2a1d13), 30, 110);
 const camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.05, 160);
 scene.add(camera);
 
@@ -168,12 +168,16 @@ function setupRound() {
     bot.actor.reset(spawn.x, spawn.z, -Math.PI / 2);
     const spent = bot.assignRound(match.moneyFor(bot.actor), time);
     match.addMoney(bot.actor, -spent);
+    // Armour bought in assignRound lives on the loadout; the actor is
+    // what takes damage, so copy it over (reset cleared it).
+    bot.actor.armor = bot.loadout.armor;
   });
   vultureBots.forEach((bot, i) => {
     const spawn = vultureSpawns[i];
     bot.actor.reset(spawn.x, spawn.z, Math.PI / 2);
     const spent = bot.assignRound(match.moneyFor(bot.actor), time);
     match.addMoney(bot.actor, -spent);
+    bot.actor.armor = bot.loadout.armor;
   });
   combat.clear();
   syncHud();
@@ -660,6 +664,18 @@ function runShot(name) {
     const mate = bots.find((b) => b.actor.team === 'sable' && b.role === 'rush-a');
     mate.actor.reset(0, -4, -Math.PI / 2);
     settle(10);
+    // A smoke cloud for the capture: freeze the bots while the grenade's
+    // 1.2 s fuse runs, so the cloud is up without the firefight moving
+    // on. The throw lands right of the target, in frame but not on it.
+    match.phase = 'freeze';
+    combat.throwGrenade(
+      new THREE.Vector3(2, 1.62, -2),
+      new THREE.Vector3(5, 6.3, -6.7),
+      'smoke',
+      player,
+    );
+    settle(80);
+    match.phase = 'live';
     aimPlayerAt(target.actor.pos.x, 1.3, target.actor.pos.z);
     syncCamera();
     playerShoot();

@@ -3,7 +3,7 @@
 // burst fire with a reaction delay, and the bomb jobs (plant / defuse /
 // pick up). Bots use the same actors, weapons and combat as the player.
 import * as THREE from 'three';
-import { BOT } from './config.js';
+import { BOT, ARMOR_PRICE } from './config.js';
 import { MAP, findPath, nearestWaypoint, inSite } from './map.js';
 import { range, chance } from './rng.js';
 import { createLoadout, currentWeapon, fire, startReload, updateLoadout, buy } from './weapons.js';
@@ -45,21 +45,32 @@ export class Bot {
     this.defuseProgress = 0;
     this.hasGrenade = false;
     this.grenadeThrown = false;
+    this.hasSmoke = false;
+    this.smokeThrown = false;
     this.strafeDir = 1;
     this.strafeUntil = 0;
     this.investigateUntil = 0;
   }
 
-  // New round: buy a gun with the bot's money, take the role's plan.
-  // Returns the money spent so the match can deduct it.
+  // New round: buy a gun with the bot's money, then armour and grenades
+  // with what is left, and take the role's plan. Returns the money spent
+  // so the match can deduct it.
   assignRound(money, time) {
     this.loadout = createLoadout();
     let spent = 0;
     if (money >= 2700 && chance(this.random, 0.7)) spent += buy(this.loadout, 'vk47', money).cost;
     else if (money >= 1500 && chance(this.random, 0.7)) spent += buy(this.loadout, 'viper', money).cost;
+    // Kevlar after the gun: armour absorbs half of all damage (actor.js).
+    if (money - spent >= ARMOR_PRICE && chance(this.random, BOT.armorChance)) {
+      spent += buy(this.loadout, 'armor', money - spent).cost;
+    }
     this.hasGrenade = money - spent >= 300 && chance(this.random, BOT.grenadeChance);
     if (this.hasGrenade) spent += buy(this.loadout, 'frag', money - spent).cost;
+    // A smoke for the site push: it blocks defender sight (combat.js).
+    this.hasSmoke = money - spent >= 300 && chance(this.random, BOT.smokeChance);
+    if (this.hasSmoke) spent += buy(this.loadout, 'smoke', money - spent).cost;
     this.grenadeThrown = false;
+    this.smokeThrown = false;
     this.target = null;
     this.plantProgress = 0;
     this.defuseProgress = 0;
@@ -202,13 +213,19 @@ export class Bot {
     return event;
   }
 
-  throwFragAt(ctx, point) {
+  // Lob a grenade at a point (frag or smoke). The arc is solved for a
+  // fixed flight time, so the throw lands where it is aimed.
+  throwGrenadeAt(ctx, point, type) {
     const eye = this.eyePosition();
     const flightTime = 1.1;
     const vx = (point.x - eye.x) / flightTime;
     const vz = (point.z - eye.z) / flightTime;
     const vy = (point.y + 1.0 - eye.y + 0.5 * 12 * flightTime * flightTime) / flightTime;
-    ctx.combat.throwGrenade(eye, new THREE.Vector3(vx, vy, vz), 'frag', this.actor);
+    ctx.combat.throwGrenade(eye, new THREE.Vector3(vx, vy, vz), type, this.actor);
+  }
+
+  throwFragAt(ctx, point) {
+    this.throwGrenadeAt(ctx, point, 'frag');
     this.grenadeThrown = true;
   }
 
@@ -263,6 +280,23 @@ export class Bot {
           this.path = findPath(here, siteNode) || [];
           this.destination = siteNode;
           this.state = 'move';
+        }
+      }
+    }
+
+    // Smoke the site on the push: an attacker close to its target site
+    // covers the plant with a cloud defenders cannot see through
+    // (combat.hasLineOfSight treats smoke as opaque).
+    if (this.hasSmoke && !this.smokeThrown && this.actor.team === 'sable'
+      && this.state !== 'engage' && this.state !== 'plant' && this.state !== 'defuse') {
+      const plan = ATTACK_PLANS[this.role];
+      if (plan && plan.site) {
+        const site = MAP.sites[plan.site];
+        const siteDistance = Math.hypot(site.x - actor.pos.x, site.z - actor.pos.z);
+        if (siteDistance < BOT.smokeThrowRange && chance(this.random, 0.05)) {
+          this.throwGrenadeAt(ctx, { x: site.x, y: 0.5, z: site.z }, 'smoke');
+          this.smokeThrown = true;
+          ctx.events.push({ type: 'grenade', x: actor.pos.x, z: actor.pos.z });
         }
       }
     }

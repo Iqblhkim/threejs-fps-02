@@ -89,7 +89,8 @@ export function createHud(callbacks) {
     setScore(sable, vulture, round) {
       elements.scoreSable.textContent = sable;
       elements.scoreVulture.textContent = vulture;
-      elements.roundLabel.textContent = `ROUND ${round}`;
+      const matchPoint = sable === 6 || vulture === 6;
+      elements.roundLabel.textContent = matchPoint ? `ROUND ${round} — MATCH POINT` : `ROUND ${round}`;
     },
     setAlive(sable, vulture) {
       elements.aliveSable.textContent = `${sable} alive`;

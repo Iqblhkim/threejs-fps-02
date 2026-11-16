@@ -79,7 +79,9 @@ export const WEAPON_ORDER = ['vk47', 'breacher', 'longshot', 'viper', 'p2000'];
 
 export const GRENADES = {
   frag: { id: 'frag', name: 'FRAG', price: 300, damage: 120, radius: 6, fuse: 2.5 },
-  smoke: { id: 'smoke', name: 'SMOKE', price: 300, duration: 15, radius: 4.5 },
+  // Smoke pops 1.2 s after the throw (a fuse is required: without one the
+  // grenade's fuse is undefined, never reaches zero, and no cloud spawns).
+  smoke: { id: 'smoke', name: 'SMOKE', price: 300, duration: 15, radius: 4.5, fuse: 1.2 },
 };
 
 export const ARMOR_PRICE = 650;
@@ -115,4 +117,7 @@ export const BOT = {
   fovCos: -0.2, // cos(101 deg): bots see a wide frontal cone
   reloadSeconds: 2.4,
   grenadeChance: 0.5,
+  armorChance: 0.6, // buy Kevlar when affordable after the gun
+  smokeChance: 0.35, // buy a smoke grenade for the site push
+  smokeThrowRange: 14, // metres from the target site to throw the smoke
 };

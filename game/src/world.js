@@ -37,7 +37,7 @@ function makeTextures() {
       ctx.strokeRect(1, 1, s - 2, s - 2);
     }),
     floor: canvasTexture(256, (ctx, s) => {
-      speckle(ctx, s, '#241f19', 1200, 0.06);
+      speckle(ctx, s, '#2e2820', 1200, 0.06);
       ctx.strokeStyle = 'rgba(0,0,0,0.3)';
       ctx.lineWidth = 3;
       for (let i = 0; i <= 2; i += 1) {
@@ -177,7 +177,7 @@ export function createWorld(scene) {
     const site = MAP.sites[name];
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(2.6, 3.0, 40),
-      new THREE.MeshBasicMaterial({ color: PALETTE.accent, transparent: true, opacity: 0.5, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: PALETTE.accent, transparent: true, opacity: 0.65, side: THREE.DoubleSide }),
     );
     ring.rotation.x = -Math.PI / 2;
     ring.position.set(site.x, 0.02, site.z);
@@ -189,7 +189,7 @@ export function createWorld(scene) {
   }
 
   // Skyline silhouettes outside the walls, for depth at the edges.
-  const skylineMat = new THREE.MeshBasicMaterial({ color: 0x241c16 });
+  const skylineMat = new THREE.MeshBasicMaterial({ color: 0x33261c });
   const skylineBoxes = [
     [-30, -26, 10, 14], [30, -24, 12, 18], [-32, 10, 8, 10], [32, 14, 9, 12],
     [-10, -30, 14, 11], [14, 30, 11, 16], [0, -34, 8, 9], [-26, 26, 7, 8],
@@ -200,11 +200,12 @@ export function createWorld(scene) {
     group.add(mesh);
   }
 
-  // Dusk lighting: warm low sun, cool fill, soft hemisphere.
-  const sky = new THREE.HemisphereLight(0x8a6a4a, 0x1a1410, 1.15);
+  // Dusk lighting: warm low sun, cool fill, soft hemisphere. Bright
+  // enough that the yard (and the north wall) reads in a still frame.
+  const sky = new THREE.HemisphereLight(0x9a7a55, 0x2a2018, 1.7);
   scene.add(sky);
 
-  const sun = new THREE.DirectionalLight(0xffb36b, 2.8);
+  const sun = new THREE.DirectionalLight(0xffb36b, 3.4);
   sun.position.set(18, 22, -14);
   sun.target.position.set(0, 0, 2);
   sun.castShadow = true;
@@ -217,14 +218,14 @@ export function createWorld(scene) {
   sun.shadow.bias = -0.0006;
   scene.add(sun, sun.target);
 
-  const fill = new THREE.DirectionalLight(0x5a6b8a, 0.5);
+  const fill = new THREE.DirectionalLight(0x5a6b8a, 0.85);
   fill.position.set(-16, 12, 16);
   scene.add(fill);
 
-  const lampA = new THREE.PointLight(0xf0a830, 12, 18, 1.6);
+  const lampA = new THREE.PointLight(0xf0a830, 14, 18, 1.6);
   lampA.position.set(16, 4.2, -12);
   scene.add(lampA);
-  const lampB = new THREE.PointLight(0x2f7f7a, 12, 18, 1.6);
+  const lampB = new THREE.PointLight(0x2f7f7a, 14, 18, 1.6);
   lampB.position.set(16, 4.2, 12);
   scene.add(lampB);
 
@@ -237,9 +238,9 @@ export function createWorld(scene) {
       for (const name of ['A', 'B']) {
         const marker = siteMarkers[name];
         marker.sprite.position.y = 3.6 + Math.sin(time * 1.4 + (name === 'A' ? 0 : 2)) * 0.12;
-        marker.ring.material.opacity = 0.38 + Math.sin(time * 2 + (name === 'A' ? 0 : 1.5)) * 0.12;
+        marker.ring.material.opacity = 0.5 + Math.sin(time * 2 + (name === 'A' ? 0 : 1.5)) * 0.12;
       }
-      lampA.intensity = 12 + Math.sin(time * 7.3) * 0.8;
+      lampA.intensity = 14 + Math.sin(time * 7.3) * 0.8;
     },
   };
 }

@@ -87,6 +87,7 @@ export class Actor {
     this.yaw = yaw;
     this.pitch = 0;
     this.hp = PLAYER.hp;
+    this.armor = 0; // armour is re-applied from the loadout after reset
     this.alive = true;
     this.crouched = false;
     this.grounded = true;
